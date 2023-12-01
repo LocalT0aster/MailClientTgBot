@@ -107,7 +107,7 @@ def extract_email_text(msg: email.message.Message) -> str:
 
 
 def decode_attachment_names(names: str):
-    encoded_names = re.findall("\=\?.*?\?\=", names)
+    encoded_names = re.findall(r'\=\?.*?\?\=', names)
     if len(encoded_names) == 1:
         encoding = email.header.decode_header(encoded_names[0])[0][1]
         decode_name = email.header.decode_header(encoded_names[0])[0][0].decode(encoding)
@@ -182,24 +182,24 @@ async def check_email(chats: list[int]):
     ans, response = mail.search(None, 'UNSEEN')
     isOKe(ans)
 
-    unread_msg_nums = response[0].split(b' ')
+    if not (len(response) == 1 and response[0] == b''):
+        unread_msg_nums = response[0].split(b' ')
+        for e_id in unread_msg_nums:
+            ans, res = mail.fetch(e_id, '(RFC822)')
+            isOKe(ans)
 
-    for e_id in unread_msg_nums:
-        ans, res = mail.fetch(e_id, '(RFC822)')
-        isOKe(ans)
-
-        msg = email_to_message(email.message_from_bytes(res[0][1]))
-        tasks = []
-        for chat in chats:
-            if len(msg) >= 4096:
-                c = 0
-                while c < len(msg):
-                    tasks.append(asyncio.create_task(bot.send_message(chat, msg[c:c+4096])))
-                    c += 4096
-            else:
-                tasks.append(asyncio.create_task(bot.send_message(chat, msg)))
-        for t in tasks:
-            await t
+            msg = email_to_message(email.message_from_bytes(res[0][1]))
+            tasks = []
+            for chat in chats:
+                if len(msg) >= 4096:
+                    c = 0
+                    while c < len(msg):
+                        tasks.append(asyncio.create_task(bot.send_message(chat, msg[c:c+4096])))
+                        c += 4096
+                else:
+                    tasks.append(asyncio.create_task(bot.send_message(chat, msg)))
+            for t in tasks:
+                await t
 
     mail.close()
     mail.logout()

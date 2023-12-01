@@ -1,7 +1,7 @@
 import os
 
 from dotenv import load_dotenv
-from telebot.async_telebot import AsyncTeleBot
+from telebot.async_telebot import AsyncTeleBot, StateMemoryStorage
 
 load_dotenv('.env')
 
@@ -9,4 +9,5 @@ load_dotenv('.env')
 TELEGRAM_TOKEN = os.environ.get('BOT_TOKEN')
 TELEGRAM_USER_ID = os.environ.get('USER_ID')
 
-bot = AsyncTeleBot(TELEGRAM_TOKEN, 'MarkdownV2')
+state_storage = StateMemoryStorage()
+bot = AsyncTeleBot(TELEGRAM_TOKEN, state_storage=state_storage)
