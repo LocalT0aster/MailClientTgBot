@@ -1,0 +1,9 @@
+version: "3.9"
+services:
+  next:
+    image: mailbot-img
+    build: .
+    container_name: mailbot
+    volumes:
+      - /secrets/mail/chats.txt:/app/chats.txt
+      - /secrets/mail/.env:/app/.env
