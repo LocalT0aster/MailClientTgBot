@@ -9,6 +9,7 @@ ADD . /app
 
 # Install any needed packages specified in requirements.txt
 RUN apt update && apt upgrade
+RUN apt install -y gcc
 RUN apt install -y bash sudo wget pandoc nano & pip install --no-cache-dir -r requirements.txt
 RUN wait
 # Run main.py when the container launches
