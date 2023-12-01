@@ -8,6 +8,7 @@ WORKDIR /app
 ADD . /app
 
 # Install any needed packages specified in requirements.txt
+RUN apt update && apt install software-properties-common
 RUN add-apt-repository ppa:apt-fast/stable
 RUN apt update
 RUN apt -y install apt-fast
