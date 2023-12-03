@@ -36,7 +36,7 @@ def isOK(s: str) -> bool:
 def isOKe(s: str) -> bool:
     res = s == 'OK'
     if not res:
-        raise Exception('The server respond was not OK')
+        raise RuntimeError('The server respond was not OK')
     return res
 
 
@@ -172,33 +172,44 @@ def email_to_message(msg: email.message.Message) -> str:
 
 
 async def check_email(subs: list[int]):
+    if(not subs):
+        logging.info('Subscriber list is empty, skipping the operation.')
+        return False
     mail = imap_connect()
-    mail.select('INBOX')
+    if(not mail):
+        logging.error('Unable to connect')
+        return False
+    try:
+        flag, _ = mail.select('INBOX')
+        isOKe(flag)
+        # Search for all unseen emails
+        ans, response = mail.search(None, 'UNSEEN')
+        isOKe(ans)
 
-    # Search for all unseen emails
-    ans, response = mail.search(None, 'UNSEEN')
-    isOKe(ans)
+        if not (len(response) == 1 and response[0] == b''):
+            unread_msg_nums = response[0].split(b' ')
+            for e_id in unread_msg_nums:
+                ans, res = mail.fetch(e_id, '(RFC822)')
+                if (not isOK(ans)):
+                    continue
 
-    if not (len(response) == 1 and response[0] == b''):
-        unread_msg_nums = response[0].split(b' ')
-        for e_id in unread_msg_nums:
-            ans, res = mail.fetch(e_id, '(RFC822)')
-            isOKe(ans)
-
-            msg = email_to_message(email.message_from_bytes(res[0][1]))
-            tasks = []
-            for sub in subs:
-                if len(msg) >= 4096:
-                    c = 0
-                    while c < len(msg):
+                msg = email_to_message(email.message_from_bytes(res[0][1]))
+                tasks = []
+                for sub in subs:
+                    if len(msg) >= 4096:
+                        c = 0
+                        while c < len(msg):
+                            tasks.append(asyncio.create_task(
+                                bot.send_message(sub, msg[c:c+4096])))
+                            c += 4096
+                    else:
                         tasks.append(asyncio.create_task(
-                            bot.send_message(sub, msg[c:c+4096])))
-                        c += 4096
-                else:
-                    tasks.append(asyncio.create_task(
-                        bot.send_message(sub, msg)))
-            for t in tasks:
-                await t
-
+                            bot.send_message(sub, msg)))
+                for t in tasks:
+                    await t
+    except Exception as e:
+        logging.error(e.with_traceback())
+        return False
     mail.close()
     mail.logout()
+    return True

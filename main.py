@@ -6,7 +6,6 @@ import random
 from sys import exit
 from time import time
 
-import telebot
 from botInstance import bot, storage
 from mailHandle import check_email
 from telebot.asyncio_handler_backends import State, StatesGroup
