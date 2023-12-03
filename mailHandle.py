@@ -12,15 +12,9 @@ import re
 import time
 
 import pandoc
+
 import telebot.types
-
 from botInstance import bot
-
-logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.WARN
-)
-
 
 # Email Server Information
 EMAIL_SERVER = os.environ.get('EMAIL_SERVER')
@@ -57,7 +51,8 @@ def extract_html(doc: str) -> str:
     #     f.write(doc)
     #     f.flush()
     #     f.close()
-    pandas = pandoc.write(pandoc.read(doc, format='html'), format='plain', options=['--columns=65', '--wrap=auto']).split('\n')
+    pandas = pandoc.write(pandoc.read(doc, format='html'), format='plain', options=[
+                          '--columns=65', '--wrap=auto']).split('\n')
     i, current_line = 1, re.search(r'[a-zA-Z0-9]', pandas[0]) is None
     while i < len(pandas) - 1:
         next_line = re.search(r'[a-zA-Z0-9]', pandas[i]) is None
@@ -68,7 +63,6 @@ def extract_html(doc: str) -> str:
         i += 1
     doc = '\n'.join(pandas)
     return doc
-
 
 
 def extract_mail_part(part: email.message.Message) -> str:
@@ -110,18 +104,21 @@ def decode_attachment_names(names: str):
     encoded_names = re.findall(r'\=\?.*?\?\=', names)
     if len(encoded_names) == 1:
         encoding = email.header.decode_header(encoded_names[0])[0][1]
-        decode_name = email.header.decode_header(encoded_names[0])[0][0].decode(encoding)
+        decode_name = email.header.decode_header(
+            encoded_names[0])[0][0].decode(encoding)
         return names.replace(encoded_names[0], decode_name)
     if len(encoded_names) > 1:
         nm = []
         for part in encoded_names:
             encoding = email.header.decode_header(part)[0][1]
-            decode_name = email.header.decode_header(part)[0][0].decode(encoding)
+            decode_name = email.header.decode_header(
+                part)[0][0].decode(encoding)
             nm.append(decode_name)
         names = names.replace(encoded_names[0], ''.join(nm))
         for c, i in enumerate(encoded_names):
             if c > 0:
-                names = names.replace(encoded_names[c], "").replace('"', "").rstrip()
+                names = names.replace(
+                    encoded_names[c], "").replace('"', "").rstrip()
     return names
 
 
@@ -138,11 +135,11 @@ def get_attachments(msg: email.message.Message):
 
 
 def assemble_message(id: str = 'No id',
-                    date: str = '-',
-                    _from: str = 'Noname',
-                    subject: str = 'No subject',
-                    body: str = 'Empty message',
-                    attach: list[str] = []) -> str:
+                     date: str = '-',
+                     _from: str = 'Noname',
+                     subject: str = 'No subject',
+                     body: str = 'Empty message',
+                     attach: list[str] = []) -> str:
     attachstr = "\n".join(attach)
     return f'ID: {id}\nFrom: {_from}\nDate: {date}\n-----\n{subject}\n-----\n{body}\n-----\nAttachments:\n{attachstr}\n'
 
@@ -167,14 +164,14 @@ def email_to_message(msg: email.message.Message) -> str:
     msg_body = extract_email_text(msg)
     msg_attachments = get_attachments(msg)
     return assemble_message(msg_id,
-                                msg['Date'],
-                                msg_from,
-                                msg_subj,
-                                msg_body,
-                                msg_attachments)
+                            msg['Date'],
+                            msg_from,
+                            msg_subj,
+                            msg_body,
+                            msg_attachments)
 
 
-async def check_email(chats: list[int]):
+async def check_email(subs: list[int]):
     mail = imap_connect()
     mail.select('INBOX')
 
@@ -190,14 +187,16 @@ async def check_email(chats: list[int]):
 
             msg = email_to_message(email.message_from_bytes(res[0][1]))
             tasks = []
-            for chat in chats:
+            for sub in subs:
                 if len(msg) >= 4096:
                     c = 0
                     while c < len(msg):
-                        tasks.append(asyncio.create_task(bot.send_message(chat, msg[c:c+4096])))
+                        tasks.append(asyncio.create_task(
+                            bot.send_message(sub, msg[c:c+4096])))
                         c += 4096
                 else:
-                    tasks.append(asyncio.create_task(bot.send_message(chat, msg)))
+                    tasks.append(asyncio.create_task(
+                        bot.send_message(sub, msg)))
             for t in tasks:
                 await t
 

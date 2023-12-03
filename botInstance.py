@@ -1,6 +1,8 @@
 import os
 
 from dotenv import load_dotenv
+
+from telebot import asyncio_filters
 from telebot.async_telebot import AsyncTeleBot, StateMemoryStorage
 
 load_dotenv('.env')
@@ -9,5 +11,7 @@ load_dotenv('.env')
 TELEGRAM_TOKEN = os.environ.get('BOT_TOKEN')
 TELEGRAM_USER_ID = os.environ.get('USER_ID')
 
-state_storage = StateMemoryStorage()
-bot = AsyncTeleBot(TELEGRAM_TOKEN, state_storage=state_storage)
+storage = StateMemoryStorage()
+bot = AsyncTeleBot(TELEGRAM_TOKEN, state_storage=storage)
+bot.add_custom_filter(asyncio_filters.StateFilter(bot))
+bot.add_custom_filter(asyncio_filters.IsDigitFilter())
