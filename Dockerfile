@@ -8,9 +8,9 @@ WORKDIR /app
 ADD . /app
 
 # Install any needed packages specified in requirements.txt
-RUN apt update && apt upgrade
-RUN apt install -y gcc
-RUN apt install -y bash sudo wget pandoc nano & pip install --no-cache-dir -r requirements.txt -r pyTelegramBotAPI/requirements.txt
-RUN wait
+RUN apt update
+RUN apt install -y bash sudo nano gcc wget tmate pandoc
+RUN pip install --no-cache-dir -r requirements.txt -r pyTelegramBotAPI/requirements.txt
+
 # Run main.py when the container launches
 CMD ["python3", "main.py"]
